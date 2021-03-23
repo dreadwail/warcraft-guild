@@ -70,6 +70,14 @@ export const getAttendance = async ({
   let hasMorePages = true;
 
   do {
+    console.log(`Fetching page:`, {
+      serverRegion,
+      serverSlug,
+      guildName,
+      page,
+      limit: LIMIT,
+    });
+
     const query = createAttendanceQuery({
       serverSlug,
       guildName,
@@ -94,14 +102,6 @@ export const getAttendance = async ({
 
     page += 1;
     hasMorePages = !!guildAttendance.has_more_pages;
-    console.log(`Fetching page:`, {
-      serverRegion,
-      serverRegion,
-      guildName,
-      page,
-      limit: LIMIT,
-      total: guildAttendance.total,
-    });
   } while (hasMorePages);
 
   const attendance = Object.keys(charactersToAttendanceCount).reduce(

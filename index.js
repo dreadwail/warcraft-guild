@@ -1,5 +1,6 @@
 import express from "express";
 import { getAttendance } from "./warcraftlogs.js";
+import papaparse from "papaparse";
 
 const PORT = process.env.PORT || 5000;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -23,12 +24,9 @@ app.get("/guild/:serverRegion/:serverSlug/:guildName", async (req, res) => {
     guildName,
   });
 
-  res.status(200).json({
-    serverRegion,
-    serverSlug,
-    guildName,
-    attendance,
-  });
+  const csv = papaparse.unparse(Object.entries(attendance));
+
+  res.status(200).send(csv);
 });
 
 app.use(function (err, _req, res, _next) {
