@@ -24,7 +24,14 @@ app.get("/guild/:serverRegion/:serverSlug/:guildName", async (req, res) => {
     guildName,
   });
 
-  const csv = papaparse.unparse(Object.entries(attendance));
+  // const sorted = Object.entries(attendance).sort(
+  //   ([charA, valueA], [charB, valueB]) => charB - charA
+  // );
+  const characters = Object.keys(attendance);
+  const charactersSorted = characters.sort();
+  const toCSV = charactersSorted.map((char) => [char, attendance[char]]);
+
+  const csv = papaparse.unparse(toCSV);
 
   res.status(200).send(csv);
 });
