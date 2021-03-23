@@ -1,0 +1,5 @@
+{
+  "name": "warcraft-attendance",
+  "description": "Gather guild member attendance data from warcraftlogs and expose it in a public URL that can be consumed.",
+  "repository": ""
+}
