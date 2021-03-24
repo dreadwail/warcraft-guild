@@ -24,9 +24,6 @@ app.get("/guild/:serverRegion/:serverSlug/:guildName", async (req, res) => {
     guildName,
   });
 
-  // const sorted = Object.entries(attendance).sort(
-  //   ([charA, valueA], [charB, valueB]) => charB - charA
-  // );
   const characters = Object.keys(attendance);
   const charactersSorted = characters.sort();
   const toCSV = charactersSorted.map((char) => [char, attendance[char]]);
