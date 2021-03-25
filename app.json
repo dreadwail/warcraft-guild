@@ -1,5 +1,5 @@
 {
-  "name": "warcraft-attendance",
-  "description": "Gather guild member attendance data from warcraftlogs and expose it in a public URL that can be consumed.",
+  "name": "warcraft-guild",
+  "description": "Gather guild member data from a variety of sources and expose the data in a public URL that can be consumed from google sheets.",
   "repository": ""
 }

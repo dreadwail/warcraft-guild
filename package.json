@@ -1,7 +1,7 @@
 {
-  "name": "warcraft-attendance",
+  "name": "warcraft-guild",
   "version": "0.0.1",
-  "description": "Gather guild member attendance data from warcraftlogs and expose it in a public URL that can be consumed.",
+  "description": "Gather guild member data from a variety of sources and expose the data in a public URL that can be consumed from google sheets.",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -9,10 +9,12 @@
     "test": "node test.js"
   },
   "dependencies": {
+    "cheerio": "^1.0.0-rc.5",
     "express": "^4.15.2",
     "got": "^11.3.0",
     "graphql": "^15.5.0",
     "graphql-request": "^3.4.0",
+    "lodash": "^4.17.21",
     "papaparse": "^5.3.0"
   },
   "license": "MIT"

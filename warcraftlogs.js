@@ -58,10 +58,15 @@ export const getAttendance = async ({
   clientId,
   clientSecret,
   serverRegion,
-  serverSlug,
+  serverName,
   guildName,
 }) => {
   const client = await createClient({ clientId, clientSecret });
+
+  const serverSlug = serverName
+    .toLowerCase()
+    .split(/[^a-zA-Z0-9]/)
+    .join("-");
 
   let numberOfRaids = 0;
   const charactersToAttendanceCount = {};

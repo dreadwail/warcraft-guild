@@ -1,37 +1,70 @@
 import express from "express";
 import { getAttendance } from "./warcraftlogs.js";
+import { getAttunements } from "./attune.js";
 import papaparse from "papaparse";
 
 const PORT = process.env.PORT || 5000;
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const WARCRAFT_LOGS_CLIENT_ID = process.env.WARCRAFT_LOGS_CLIENT_ID;
+const WARCRAFT_LOGS_CLIENT_SECRET = process.env.WARCRAFT_LOGS_CLIENT_SECRET;
 
-if (!CLIENT_ID || !CLIENT_SECRET) {
-  console.log("CLIENT_ID and/or CLIENT_SECRET missing.");
+if (!WARCRAFT_LOGS_CLIENT_ID || !WARCRAFT_LOGS_CLIENT_SECRET) {
+  console.log(
+    "WARCRAFT_LOGS_CLIENT_ID and/or WARCRAFT_LOGS_CLIENT_SECRET missing."
+  );
   process.exit(1);
 }
 
 const app = express();
 
-app.get("/guild/:serverRegion/:serverSlug/:guildName", async (req, res) => {
-  const { serverRegion, serverSlug, guildName } = req.params;
+app.get(
+  "/attendance/:serverRegion/:serverName/:faction/:guildName",
+  async (req, res) => {
+    const { serverRegion, serverName, faction, guildName } = req.params;
 
-  const attendance = await getAttendance({
-    clientId: CLIENT_ID,
-    clientSecret: CLIENT_SECRET,
-    serverRegion,
-    serverSlug,
-    guildName,
-  });
+    const attendance = await getAttendance({
+      clientId: WARCRAFT_LOGS_CLIENT_ID,
+      clientSecret: WARCRAFT_LOGS_CLIENT_SECRET,
+      serverRegion,
+      serverName,
+      faction,
+      guildName,
+    });
 
-  const characters = Object.keys(attendance);
-  const charactersSorted = characters.sort();
-  const toCSV = charactersSorted.map((char) => [char, attendance[char]]);
+    const characters = Object.keys(attendance);
+    const charactersSorted = characters.sort();
+    const toCSV = charactersSorted.map((char) => [char, attendance[char]]);
 
-  const csv = papaparse.unparse(toCSV);
+    const csv = papaparse.unparse(toCSV);
 
-  res.status(200).send(csv);
-});
+    res.status(200).send(csv);
+  }
+);
+
+app.get(
+  "/attunements/:serverRegion/:serverName/:faction/:guildName",
+  async (req, res) => {
+    const { serverRegion, serverName, faction, guildName } = req.params;
+
+    const attunements = await getAttunements({
+      serverRegion,
+      serverName,
+      faction,
+      guildName,
+    });
+
+    const characters = Object.keys(attunements);
+    const charactersSorted = characters.sort();
+
+    const toCSV = characters.map((character) => ({
+      character,
+      ...attunements[character],
+    }));
+
+    const csv = papaparse.unparse(toCSV);
+
+    res.status(200).send(csv);
+  }
+);
 
 app.use(function (err, _req, res, _next) {
   console.error(err);
