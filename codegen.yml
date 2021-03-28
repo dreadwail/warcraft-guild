@@ -1,0 +1,16 @@
+overwrite: true
+schema:
+  - https://classic.warcraftlogs.com/api/v2/client:
+      headers:
+        Authorization: Bearer ${WARCRAFT_LOGS_ACCESS_TOKEN}
+documents: ./src/**/*.graphql
+generates:
+  src/generated/graphql.ts:
+    plugins:
+      - "typescript"
+      - "typescript-operations"
+      - "typescript-graphql-request"
+      - "typescript-document-nodes"
+  ./graphql.schema.json:
+    plugins:
+      - "introspection"

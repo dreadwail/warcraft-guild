@@ -1,0 +1,22 @@
+query getGuildData($guildName: String!, $serverSlug: String!, $serverRegion: String!, $limit: Int!, $page: Int!) {
+  guildData {
+    guild(name: $guildName, serverSlug: $serverSlug, serverRegion: $serverRegion) {
+      attendance(limit: $limit, page: $page) {
+        current_page
+        data {
+          code
+          players {
+            name
+            presence
+            type
+          }
+          startTime
+          zone {
+            name
+          }
+        }
+        has_more_pages
+      }
+    }
+  }
+}
