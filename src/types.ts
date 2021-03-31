@@ -15,21 +15,11 @@ export type Server = {
   region: Region;
 };
 
-type GuildBase = {
+export type Guild = {
   name: string;
   server: Server;
   faction: Faction;
 };
-
-type AllianceGuild = GuildBase & {
-  faction: Faction.Alliance;
-};
-
-type HordeGuild = GuildBase & {
-  faction: Faction.Horde;
-};
-
-export type Guild = AllianceGuild | HordeGuild;
 
 export enum Gender {
   MALE = "MALE",
@@ -77,13 +67,13 @@ type CharacterBase = {
 type AllianceCharacter = CharacterBase & {
   faction: Faction.Alliance;
   race: AllianceRace;
-  guild: AllianceGuild;
+  guild: Guild;
 };
 
 type HordeCharacter = CharacterBase & {
   faction: Faction.Horde;
   race: HordeRace;
-  guild: HordeGuild;
+  guild: Guild;
 };
 
 export type Character = AllianceCharacter | HordeCharacter;
@@ -130,21 +120,11 @@ export type GuildRequest = {
   guildName: Guild["name"];
 };
 
-type GuildResponseBase = {
+export type GuildResponse = {
   guild: Guild;
   characters: Character[];
   attunements: CharacterToAttunements;
   attendance: CharacterToAttendance;
 };
 
-type AllianceGuildResponse = GuildResponseBase & {
-  guild: AllianceGuild;
-  characters: AllianceCharacter[];
-};
-
-type HordeGuildResponse = GuildResponseBase & {
-  guild: HordeGuild;
-  characters: HordeCharacter[];
-};
-
-export type GuildResponse = AllianceGuildResponse | HordeGuildResponse;
+export type DataSource = (request: GuildRequest, response: GuildResponse) => GuildResponse;

@@ -1,81 +1,63 @@
-import express from "express";
-import { getAttendance } from "./warcraftlogs.js";
-import { getAttunements } from "./attune.js";
+import express, { Request, Response, NextFunction } from "express";
+import { DataSource, Faction, GuildRequest, GuildResponse, Region } from "./types";
+import { capitalize, toUpper } from "lodash";
+import config from "./config";
 import papaparse from "papaparse";
-
-const PORT = process.env.PORT || 5000;
-const WARCRAFT_LOGS_CLIENT_ID = process.env.WARCRAFT_LOGS_CLIENT_ID;
-const WARCRAFT_LOGS_CLIENT_SECRET = process.env.WARCRAFT_LOGS_CLIENT_SECRET;
-
-if (!WARCRAFT_LOGS_CLIENT_ID || !WARCRAFT_LOGS_CLIENT_SECRET) {
-  console.log(
-    "WARCRAFT_LOGS_CLIENT_ID and/or WARCRAFT_LOGS_CLIENT_SECRET missing."
-  );
-  process.exit(1);
-}
 
 const app = express();
 
-app.get(
-  "/attendance/:serverRegion/:serverName/:faction/:guildName",
-  async (req, res) => {
-    const { serverRegion, serverName, faction, guildName } = req.params;
+app.get("/guild/:serverRegion(US|EU|CN|KR)/:serverName/:faction(alliance|horde)/:guildName", async (req, res) => {
+  const { serverRegion: serverRegionRaw, serverName, faction: factionRaw, guildName } = req.params;
+  const serverRegion = toUpper(serverRegionRaw) as Region;
+  const faction = capitalize(factionRaw) as Faction;
 
-    const attendance = await getAttendance({
-      clientId: WARCRAFT_LOGS_CLIENT_ID,
-      clientSecret: WARCRAFT_LOGS_CLIENT_SECRET,
-      serverRegion,
-      serverName,
+  const request: GuildRequest = {
+    serverRegion,
+    serverName,
+    faction,
+    guildName,
+  };
+
+  const dataSources: DataSource[] = [];
+
+  const initialResponse: GuildResponse = {
+    guild: {
+      name: guildName,
+      server: {
+        name: serverName,
+        region: serverRegion,
+      },
       faction,
-      guildName,
-    });
+    },
+    characters: [],
+    attunements: {},
+    attendance: {},
+  };
 
-    const characters = Object.keys(attendance);
-    const charactersSorted = characters.sort();
-    const toCSV = charactersSorted.map((char) => [char, attendance[char]]);
+  const guildResponse = dataSources.reduce<GuildResponse>(
+    (response, dataSource) => dataSource(request, response),
+    initialResponse
+  );
 
-    const csv = papaparse.unparse(toCSV);
+  res.format({
+    json: () => res.status(200).json(guildResponse),
+    csv: () => {
+      const csv = papaparse.unparse([]);
+      res.status(200).send(csv);
+    },
+  });
+});
 
-    res.status(200).send(csv);
-  }
-);
-
-app.get(
-  "/attunements/:serverRegion/:serverName/:faction/:guildName",
-  async (req, res) => {
-    const { serverRegion, serverName, faction, guildName } = req.params;
-
-    const attunements = await getAttunements({
-      serverRegion,
-      serverName,
-      faction,
-      guildName,
-    });
-
-    const characters = Object.keys(attunements);
-    const charactersSorted = characters.sort();
-
-    const toCSV = characters.map((character) => ({
-      character,
-      ...attunements[character],
-    }));
-
-    const csv = papaparse.unparse(toCSV);
-
-    res.status(200).send(csv);
-  }
-);
-
-app.use(function (err, _req, res, _next) {
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   res.sendStatus(500);
 });
 
-app.use((_req, res, _next) => {
+app.use((_req: Request, res: Response, _next: NextFunction) => {
   res.sendStatus(404);
 });
 
-const server = app.listen(PORT, () => console.log(`Listening on ${PORT}`));
+const server = app.listen(config.port, () => console.log(`Listening on ${config.port}`));
 
 process.on("SIGTERM", () => {
   console.log("SIGTERM signal received: closing HTTP server");
