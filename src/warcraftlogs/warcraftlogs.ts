@@ -1,18 +1,19 @@
 import { GraphQLClient } from "graphql-request";
 import got from "got";
-import { AttendanceGuildRequest, TokenResponse } from "./types";
-import { getSdk } from "../generated/graphql";
+import { TokenResponse } from "./types";
+import { getSdk } from "./generated/graphql";
 import { compact, flatMap } from "lodash";
-import { CharacterToAttendance } from "../types";
+import { CharacterToAttendance, DataSource, GuildRequest } from "../types";
+import config from "../config";
 
 const LIMIT = 25;
 const TOKEN_URL = "https://classic.warcraftlogs.com/oauth/token";
 const GRAPHQL_URL = "https://classic.warcraftlogs.com/api/v2/client";
 
-const createClient = async ({ clientId, clientSecret }: AttendanceGuildRequest) => {
+const createClient = async () => {
   const tokenResponse = got.post<TokenResponse>(TOKEN_URL, {
-    username: clientId,
-    password: clientSecret,
+    username: config.warcraftLogs.clientId,
+    password: config.warcraftLogs.clientSecret,
     json: {
       grant_type: "client_credentials",
     },
@@ -33,11 +34,11 @@ const serverNameToServerSlug = (serverName: string): string =>
     .split(/[^a-zA-Z0-9]/)
     .join("-");
 
-export const getAttendance = async (request: AttendanceGuildRequest) => {
+const getAttendance = async (request: GuildRequest): Promise<CharacterToAttendance> => {
   const { serverName, serverRegion, guildName } = request;
   const serverSlug = serverNameToServerSlug(serverName);
 
-  const client = await createClient(request);
+  const client = await createClient();
   const sdk = getSdk(client);
 
   let numberOfRaids = 0;
@@ -47,13 +48,15 @@ export const getAttendance = async (request: AttendanceGuildRequest) => {
   let hasMorePages = true;
 
   do {
-    const data = await sdk.getGuildData({
+    const variables = {
       serverSlug,
       guildName,
       serverRegion,
       page,
       limit: LIMIT,
-    });
+    };
+    console.log("EXECUTE warcraftlogs call:", variables);
+    const data = await sdk.getGuildData(variables);
 
     const guildAttendance = data.guildData?.guild?.attendance;
     const raids = compact(guildAttendance?.data || []);
@@ -75,7 +78,7 @@ export const getAttendance = async (request: AttendanceGuildRequest) => {
     hasMorePages = !!guildAttendance?.has_more_pages;
   } while (hasMorePages);
 
-  const attendance = Object.keys(charactersToAttendanceCount).reduce((percents, character) => {
+  const attendance = Object.keys(charactersToAttendanceCount).reduce<CharacterToAttendance>((percents, character) => {
     const raidsAttended = charactersToAttendanceCount[character];
     const percent = raidsAttended / numberOfRaids;
     return { ...percents, [character]: percent };
@@ -83,3 +86,20 @@ export const getAttendance = async (request: AttendanceGuildRequest) => {
 
   return attendance;
 };
+
+const dataSource: DataSource = {
+  name: "warcraftlogs",
+  execute: async (request, response) => {
+    const attendance = await getAttendance(request);
+
+    return {
+      ...response,
+      attendance: {
+        ...response.attendance,
+        ...attendance,
+      },
+    };
+  },
+};
+
+export default dataSource;

@@ -127,4 +127,7 @@ export type GuildResponse = {
   attendance: CharacterToAttendance;
 };
 
-export type DataSource = (request: GuildRequest, response: GuildResponse) => GuildResponse;
+export type DataSource = {
+  name: string;
+  execute: (request: GuildRequest, response: GuildResponse) => Promise<GuildResponse>;
+};

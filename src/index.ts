@@ -3,6 +3,7 @@ import { DataSource, Faction, GuildRequest, GuildResponse, Region } from "./type
 import { capitalize, toUpper } from "lodash";
 import config from "./config";
 import papaparse from "papaparse";
+import warcraftlogs from "./warcraftlogs";
 
 const app = express();
 
@@ -18,7 +19,7 @@ app.get("/guild/:serverRegion(US|EU|CN|KR)/:serverName/:faction(alliance|horde)/
     guildName,
   };
 
-  const dataSources: DataSource[] = [];
+  const dataSources: DataSource[] = [warcraftlogs];
 
   const initialResponse: GuildResponse = {
     guild: {
@@ -34,10 +35,13 @@ app.get("/guild/:serverRegion(US|EU|CN|KR)/:serverName/:faction(alliance|horde)/
     attendance: {},
   };
 
-  const guildResponse = dataSources.reduce<GuildResponse>(
-    (response, dataSource) => dataSource(request, response),
-    initialResponse
-  );
+  const guildResponse = await dataSources.reduce<Promise<GuildResponse>>(async (previousPromise, dataSource) => {
+    const response = await previousPromise;
+    console.log(`BEGIN collection from data source: ${dataSource.name}`);
+    const newResponse = await dataSource.execute(request, response);
+    console.log(`END collection from data source: ${dataSource.name}`);
+    return newResponse;
+  }, Promise.resolve(initialResponse));
 
   res.format({
     json: () => res.status(200).json(guildResponse),

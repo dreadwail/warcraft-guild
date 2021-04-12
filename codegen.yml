@@ -3,14 +3,14 @@ schema:
   - https://classic.warcraftlogs.com/api/v2/client:
       headers:
         Authorization: Bearer ${WARCRAFT_LOGS_ACCESS_TOKEN}
-documents: ./src/**/*.graphql
+documents: ./src/warcraftlogs/**/*.graphql
 generates:
-  src/generated/graphql.ts:
+  src/warcraftlogs/generated/graphql.ts:
     plugins:
       - "typescript"
       - "typescript-operations"
       - "typescript-graphql-request"
       - "typescript-document-nodes"
-  ./graphql.schema.json:
+  src/warcraftlogs/graphql.schema.json:
     plugins:
       - "introspection"

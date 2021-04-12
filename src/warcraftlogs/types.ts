@@ -1,10 +1,5 @@
 import { GuildRequest } from "../types";
 
-export type AttendanceGuildRequest = GuildRequest & {
-  clientId: string;
-  clientSecret: string;
-};
-
 export type TokenResponse = {
   access_token: string;
 };

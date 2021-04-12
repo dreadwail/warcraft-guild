@@ -10,6 +10,16 @@ Obtain a warcraftlogs API V2 client id and secret and specify environment variab
 
 `WARCRAFT_LOGS_CLIENT_ID={YOUR_CLIENT_ID} WARCRAFT_LOGS_CLIENT_SECRET={YOUR_CLIENT_SECRET} yarn start`
 
-If you need to regenerate the Typescript types for the warcraftlogs graphql schema you'll need to set the environment variable for an access token and call the script:
+This is not an exhaustive list of the scripts available, just the important ones. For a full list look in `package.json`.
 
-`WARCRAFT_LOGS_ACCESS_TOKEN={YOUR_ACCESS_TOKEN} yarn run graphql:warcraftlogs`
+| Script              | Description                                        |
+| ------------------- | -------------------------------------------------- |
+| yarn run generate   | Regenerate codegen'd artifacts from their sources. |
+| yarn run build      | Build the app.                                     |
+| yarn run start      | Launch the development server.                     |
+| yarn run test       | Run the tests/linting with coverage.               |
+| yarn run test:watch | Run the tests in watch mode.                       |
+
+## Deployment
+
+TBD

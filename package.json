@@ -3,10 +3,11 @@
   "version": "0.0.1",
   "description": "Gather guild member data from a variety of sources and expose the data in a public URL that can be consumed.",
   "main": "index.js",
-  "type": "module",
   "scripts": {
-    "graphql:warcraftlogs": "graphql-codegen --config codegen.yml",
-    "build": "run-s graphql:warcraftlogs tsc",
+    "generate:warcraftlogs": "./src/warcraftlogs/generate.sh",
+    "generate": "run-s generate:warcraftlogs",
+    "build:typescript": "tsc",
+    "build": "run-s generate build:typescript",
     "start:server": "node dist/index.js",
     "start": "run-s build start:server"
   },
