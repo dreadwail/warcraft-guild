@@ -1,21 +1,27 @@
 import got from "got";
 
-import { Attunement, Attunements, CharacterToAttunements, GuildRequest } from "../types";
-import { AttuneAttunementsResponse, AttuneGuildsResponse, AttunementType, ID, Toon } from "./types";
+import { Attunement, Attunements, CharacterToAttunements, DataSource, GuildRequest } from "../types";
+import { AttuneAttunementsResponse, AttuneError, AttuneGuildsResponse, AttunementType, ID, Toon } from "./types";
 
 const ATTUNEMENTS_URL = "https://warcraftratings.com/json_attuneRosterByGuild.php";
 const GUILDS_URL = "https://warcraftratings.com/json_attuneGuilds.php";
 
+const isError = (response: AttuneGuildsResponse | AttuneError): response is AttuneError => !!(response as any).errorId;
+
 const getGuildId = async (request: GuildRequest): Promise<ID> => {
+  const searchParams = {
+    realm: request.serverName,
+    faction: request.faction,
+    guildName: request.guildName,
+  };
+
   const response: AttuneGuildsResponse = await got
-    .get<AttuneGuildsResponse>(GUILDS_URL, {
-      searchParams: {
-        realm: request.serverName,
-        faction: request.faction,
-        guildName: request.guildName,
-      },
-    })
+    .get<AttuneGuildsResponse>(GUILDS_URL, { searchParams })
     .json();
+
+  if (isError(response)) {
+    throw new Error(`response.message: ${JSON.stringify(searchParams)}`);
+  }
 
   const firstResponse = response[0];
   return firstResponse.guildId;
@@ -92,8 +98,11 @@ const toonToAttunements = (toon: Toon): Attunements => {
   );
 };
 
-export const getAttunements = async (request: GuildRequest): Promise<CharacterToAttunements> => {
+const getAttunements = async (request: GuildRequest): Promise<CharacterToAttunements> => {
+  console.log("EXECUTE attune getGuildId call");
   const guildId = await getGuildId(request);
+
+  console.log("EXECUTE attune getGuildAttunements call:", { guildId });
   const attunementsResponse = await getGuildAttunements(guildId);
 
   return attunementsResponse.toons.reduce<CharacterToAttunements>(
@@ -104,3 +113,20 @@ export const getAttunements = async (request: GuildRequest): Promise<CharacterTo
     {}
   );
 };
+
+const dataSource: DataSource = {
+  name: "attune",
+  execute: async (request, response) => {
+    const attunements = await getAttunements(request);
+
+    return {
+      ...response,
+      attunements: {
+        ...response.attunements,
+        ...attunements,
+      },
+    };
+  },
+};
+
+export default dataSource;

@@ -17,6 +17,7 @@ const lodash_1 = require("lodash");
 const config_1 = __importDefault(require("./config"));
 const papaparse_1 = __importDefault(require("papaparse"));
 const warcraftlogs_1 = __importDefault(require("./warcraftlogs"));
+const attune_1 = __importDefault(require("./attune"));
 const app = express_1.default();
 app.get("/guild/:serverRegion(US|EU|CN|KR)/:serverName/:faction(alliance|horde)/:guildName", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { serverRegion: serverRegionRaw, serverName, faction: factionRaw, guildName } = req.params;
@@ -28,7 +29,7 @@ app.get("/guild/:serverRegion(US|EU|CN|KR)/:serverName/:faction(alliance|horde)/
         faction,
         guildName,
     };
-    const dataSources = [warcraftlogs_1.default];
+    const dataSources = [warcraftlogs_1.default, attune_1.default];
     const initialResponse = {
         guild: {
             name: guildName,
@@ -44,10 +45,16 @@ app.get("/guild/:serverRegion(US|EU|CN|KR)/:serverName/:faction(alliance|horde)/
     };
     const guildResponse = yield dataSources.reduce((previousPromise, dataSource) => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield previousPromise;
-        console.log(`BEGIN collection from data source: ${dataSource.name}`);
-        const newResponse = yield dataSource.execute(request, response);
-        console.log(`END collection from data source: ${dataSource.name}`);
-        return newResponse;
+        try {
+            console.log(`BEGIN collection from data source: ${dataSource.name}`);
+            const newResponse = yield dataSource.execute(request, response);
+            console.log(`END collection from data source: ${dataSource.name}`);
+            return newResponse;
+        }
+        catch (_a) {
+            console.log(`FAILED collection from data source: ${dataSource.name}`);
+            return response;
+        }
     }), Promise.resolve(initialResponse));
     res.format({
         json: () => res.status(200).json(guildResponse),

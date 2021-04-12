@@ -12,22 +12,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAttunements = void 0;
 const got_1 = __importDefault(require("got"));
 const types_1 = require("../types");
 const types_2 = require("./types");
 const ATTUNEMENTS_URL = "https://warcraftratings.com/json_attuneRosterByGuild.php";
 const GUILDS_URL = "https://warcraftratings.com/json_attuneGuilds.php";
+const isError = (response) => !!response.errorId;
 const getGuildId = (request) => __awaiter(void 0, void 0, void 0, function* () {
+    const searchParams = {
+        realm: request.serverName,
+        faction: request.faction,
+        guildName: request.guildName,
+    };
     const response = yield got_1.default
-        .get(GUILDS_URL, {
-        searchParams: {
-            realm: request.serverName,
-            faction: request.faction,
-            guildName: request.guildName,
-        },
-    })
+        .get(GUILDS_URL, { searchParams })
         .json();
+    if (isError(response)) {
+        throw new Error(`response.message: ${JSON.stringify(searchParams)}`);
+    }
     const firstResponse = response[0];
     return firstResponse.guildId;
 });
@@ -92,8 +94,17 @@ const toonToAttunements = (toon) => {
     }, Object.assign({}, defaultAttunements));
 };
 const getAttunements = (request) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("EXECUTE attune getGuildId call");
     const guildId = yield getGuildId(request);
+    console.log("EXECUTE attune getGuildAttunements call:", { guildId });
     const attunementsResponse = yield getGuildAttunements(guildId);
     return attunementsResponse.toons.reduce((characterToAttunements, toon) => (Object.assign(Object.assign({}, characterToAttunements), { [toon.toon]: toonToAttunements(toon) })), {});
 });
-exports.getAttunements = getAttunements;
+const dataSource = {
+    name: "attune",
+    execute: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
+        const attunements = yield getAttunements(request);
+        return Object.assign(Object.assign({}, response), { attunements: Object.assign(Object.assign({}, response.attunements), attunements) });
+    }),
+};
+exports.default = dataSource;

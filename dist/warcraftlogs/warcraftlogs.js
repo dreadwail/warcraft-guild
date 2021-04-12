@@ -21,6 +21,7 @@ const LIMIT = 25;
 const TOKEN_URL = "https://classic.warcraftlogs.com/oauth/token";
 const GRAPHQL_URL = "https://classic.warcraftlogs.com/api/v2/client";
 const createClient = () => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("EXECUTE warcraftlogs token call");
     const tokenResponse = got_1.default.post(TOKEN_URL, {
         username: config_1.default.warcraftLogs.clientId,
         password: config_1.default.warcraftLogs.clientSecret,
@@ -58,7 +59,7 @@ const getAttendance = (request) => __awaiter(void 0, void 0, void 0, function* (
             page,
             limit: LIMIT,
         };
-        console.log("EXECUTE warcraftlogs call:", variables);
+        console.log("EXECUTE warcraftlogs getGuildData call:", variables);
         const data = yield sdk.getGuildData(variables);
         const guildAttendance = (_b = (_a = data.guildData) === null || _a === void 0 ? void 0 : _a.guild) === null || _b === void 0 ? void 0 : _b.attendance;
         const raids = lodash_1.compact((guildAttendance === null || guildAttendance === void 0 ? void 0 : guildAttendance.data) || []);

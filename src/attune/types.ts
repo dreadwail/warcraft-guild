@@ -12,6 +12,11 @@ type AttuneGuild = {
   faction: Faction;
 };
 
+export type AttuneError = {
+  errorId: number | string;
+  message: string;
+};
+
 export type AttuneGuildsResponse = AttuneGuild[];
 
 enum Gender {

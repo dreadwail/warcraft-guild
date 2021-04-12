@@ -4,6 +4,7 @@ import { capitalize, toUpper } from "lodash";
 import config from "./config";
 import papaparse from "papaparse";
 import warcraftlogs from "./warcraftlogs";
+import attune from "./attune";
 
 const app = express();
 
@@ -19,7 +20,7 @@ app.get("/guild/:serverRegion(US|EU|CN|KR)/:serverName/:faction(alliance|horde)/
     guildName,
   };
 
-  const dataSources: DataSource[] = [warcraftlogs];
+  const dataSources: DataSource[] = [warcraftlogs, attune];
 
   const initialResponse: GuildResponse = {
     guild: {
@@ -37,10 +38,15 @@ app.get("/guild/:serverRegion(US|EU|CN|KR)/:serverName/:faction(alliance|horde)/
 
   const guildResponse = await dataSources.reduce<Promise<GuildResponse>>(async (previousPromise, dataSource) => {
     const response = await previousPromise;
-    console.log(`BEGIN collection from data source: ${dataSource.name}`);
-    const newResponse = await dataSource.execute(request, response);
-    console.log(`END collection from data source: ${dataSource.name}`);
-    return newResponse;
+    try {
+      console.log(`BEGIN collection from data source: ${dataSource.name}`);
+      const newResponse = await dataSource.execute(request, response);
+      console.log(`END collection from data source: ${dataSource.name}`);
+      return newResponse;
+    } catch {
+      console.log(`FAILED collection from data source: ${dataSource.name}`);
+      return response;
+    }
   }, Promise.resolve(initialResponse));
 
   res.format({

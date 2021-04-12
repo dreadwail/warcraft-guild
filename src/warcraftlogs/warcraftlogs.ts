@@ -11,6 +11,7 @@ const TOKEN_URL = "https://classic.warcraftlogs.com/oauth/token";
 const GRAPHQL_URL = "https://classic.warcraftlogs.com/api/v2/client";
 
 const createClient = async () => {
+  console.log("EXECUTE warcraftlogs token call");
   const tokenResponse = got.post<TokenResponse>(TOKEN_URL, {
     username: config.warcraftLogs.clientId,
     password: config.warcraftLogs.clientSecret,
@@ -55,7 +56,7 @@ const getAttendance = async (request: GuildRequest): Promise<CharacterToAttendan
       page,
       limit: LIMIT,
     };
-    console.log("EXECUTE warcraftlogs call:", variables);
+    console.log("EXECUTE warcraftlogs getGuildData call:", variables);
     const data = await sdk.getGuildData(variables);
 
     const guildAttendance = data.guildData?.guild?.attendance;
