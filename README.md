@@ -12,13 +12,11 @@ Obtain a warcraftlogs API V2 client id and secret and specify environment variab
 
 This is not an exhaustive list of the scripts available, just the important ones. For a full list look in `package.json`.
 
-| Script              | Description                                        |
-| ------------------- | -------------------------------------------------- |
-| yarn run generate   | Regenerate codegen'd artifacts from their sources. |
-| yarn run build      | Build the app.                                     |
-| yarn run start      | Launch the development server.                     |
-| yarn run test       | Run the tests/linting with coverage.               |
-| yarn run test:watch | Run the tests in watch mode.                       |
+| Script            | Description                                        |
+| ----------------- | -------------------------------------------------- |
+| yarn run generate | Regenerate codegen'd artifacts from their sources. |
+| yarn run build    | Build the app.                                     |
+| yarn run start    | Launch the development server.                     |
 
 ## Deployment
 
