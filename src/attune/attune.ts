@@ -20,7 +20,7 @@ const getGuildId = async (request: GuildRequest): Promise<ID> => {
     .json();
 
   if (isError(response)) {
-    throw new Error(`response.message: ${JSON.stringify(searchParams)}`);
+    throw new Error(JSON.stringify({ searchParams, message: response.message }));
   }
 
   const firstResponse = response[0];

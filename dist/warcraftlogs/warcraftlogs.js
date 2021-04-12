@@ -16,12 +16,14 @@ const graphql_request_1 = require("graphql-request");
 const got_1 = __importDefault(require("got"));
 const graphql_1 = require("./generated/graphql");
 const lodash_1 = require("lodash");
+const types_1 = require("../types");
 const config_1 = __importDefault(require("../config"));
+const NAME = "warcraftlogs";
 const LIMIT = 25;
 const TOKEN_URL = "https://classic.warcraftlogs.com/oauth/token";
 const GRAPHQL_URL = "https://classic.warcraftlogs.com/api/v2/client";
 const createClient = () => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("EXECUTE warcraftlogs token call");
+    console.log(`EXECUTE "${NAME}" token call`);
     const tokenResponse = got_1.default.post(TOKEN_URL, {
         username: config_1.default.warcraftLogs.clientId,
         password: config_1.default.warcraftLogs.clientSecret,
@@ -41,27 +43,51 @@ const serverNameToServerSlug = (serverName) => serverName
     .toLowerCase()
     .split(/[^a-zA-Z0-9]/)
     .join("-");
-const getAttendance = (request) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+const gqlGuildToGuild = (gqlGuild) => ({
+    name: gqlGuild.name,
+    server: {
+        name: gqlGuild.server.name,
+        region: regionNamesToRegion[gqlGuild.server.region.compactName] || types_1.Region.US,
+    },
+    faction: types_1.Faction.Alliance,
+});
+const getGuild = (client, request) => __awaiter(void 0, void 0, void 0, function* () {
     const { serverName, serverRegion, guildName } = request;
     const serverSlug = serverNameToServerSlug(serverName);
-    const client = yield createClient();
+    const variables = { serverSlug, guildName, serverRegion };
+    console.log(`EXECUTE "${NAME}" getGuild call:`, variables);
     const sdk = graphql_1.getSdk(client);
+    const data = yield sdk.getGuild(variables);
+    if (!data || !data.guildData || !data.guildData.guild) {
+        throw new Error(`No guild found matching the specified criteria: ${JSON.stringify(variables)}`);
+    }
+    return gqlGuildToGuild(data.guildData.guild);
+});
+const getAttendancePage = (client, request, pageNumber) => __awaiter(void 0, void 0, void 0, function* () {
+    const { serverName, serverRegion, guildName } = request;
+    const serverSlug = serverNameToServerSlug(serverName);
+    const variables = {
+        serverSlug,
+        guildName,
+        serverRegion,
+        page: pageNumber,
+        limit: LIMIT,
+    };
+    console.log(`EXECUTE "${NAME}" getAttendance call:`, variables);
+    const sdk = graphql_1.getSdk(client);
+    const data = yield sdk.getAttendance(variables);
+    if (!data || !data.guildData || !data.guildData.guild || !data.guildData.guild.attendance) {
+        throw new Error(`No guild attendance found matching the specified criteria: ${JSON.stringify(variables)}`);
+    }
+    return data.guildData.guild.attendance;
+});
+const getAttendance = (client, request) => __awaiter(void 0, void 0, void 0, function* () {
     let numberOfRaids = 0;
     const charactersToAttendanceCount = {};
     let page = 1;
     let hasMorePages = true;
     do {
-        const variables = {
-            serverSlug,
-            guildName,
-            serverRegion,
-            page,
-            limit: LIMIT,
-        };
-        console.log("EXECUTE warcraftlogs getGuildData call:", variables);
-        const data = yield sdk.getGuildData(variables);
-        const guildAttendance = (_b = (_a = data.guildData) === null || _a === void 0 ? void 0 : _a.guild) === null || _b === void 0 ? void 0 : _b.attendance;
+        const guildAttendance = yield getAttendancePage(client, request, page);
         const raids = lodash_1.compact((guildAttendance === null || guildAttendance === void 0 ? void 0 : guildAttendance.data) || []);
         const players = lodash_1.flatMap(raids, (raid) => lodash_1.compact(raid.players));
         for (let i = 0; i < players.length; i += 1) {
@@ -83,11 +109,19 @@ const getAttendance = (request) => __awaiter(void 0, void 0, void 0, function* (
     }, {});
     return attendance;
 });
+const regionNamesToRegion = {
+    US: types_1.Region.US,
+    EU: types_1.Region.EU,
+    CN: types_1.Region.CN,
+    KR: types_1.Region.KR,
+};
 const dataSource = {
     name: "warcraftlogs",
     execute: (request, response) => __awaiter(void 0, void 0, void 0, function* () {
-        const attendance = yield getAttendance(request);
-        return Object.assign(Object.assign({}, response), { attendance: Object.assign(Object.assign({}, response.attendance), attendance) });
+        const client = yield createClient();
+        const guild = yield getGuild(client, request);
+        const attendance = yield getAttendance(client, request);
+        return Object.assign(Object.assign({}, response), { guild: response.guild || guild, attendance: Object.assign(Object.assign({}, response.attendance), attendance) });
     }),
 };
 exports.default = dataSource;

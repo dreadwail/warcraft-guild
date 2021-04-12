@@ -1,17 +1,24 @@
 import { GraphQLClient } from "graphql-request";
 import got from "got";
 import { TokenResponse } from "./types";
-import { getSdk } from "./generated/graphql";
+import {
+  GetGuildQueryVariables,
+  GetAttendanceQueryVariables,
+  Guild as GQLGuild,
+  getSdk,
+  GuildAttendancePagination,
+} from "./generated/graphql";
 import { compact, flatMap } from "lodash";
-import { CharacterToAttendance, DataSource, GuildRequest } from "../types";
+import { CharacterToAttendance, DataSource, Faction, Guild, GuildRequest, Region } from "../types";
 import config from "../config";
 
+const NAME = "warcraftlogs";
 const LIMIT = 25;
 const TOKEN_URL = "https://classic.warcraftlogs.com/oauth/token";
 const GRAPHQL_URL = "https://classic.warcraftlogs.com/api/v2/client";
 
 const createClient = async () => {
-  console.log("EXECUTE warcraftlogs token call");
+  console.log(`EXECUTE "${NAME}" token call`);
   const tokenResponse = got.post<TokenResponse>(TOKEN_URL, {
     username: config.warcraftLogs.clientId,
     password: config.warcraftLogs.clientSecret,
@@ -35,13 +42,60 @@ const serverNameToServerSlug = (serverName: string): string =>
     .split(/[^a-zA-Z0-9]/)
     .join("-");
 
-const getAttendance = async (request: GuildRequest): Promise<CharacterToAttendance> => {
+const gqlGuildToGuild = (gqlGuild: GQLGuild): Guild => ({
+  name: gqlGuild.name,
+  server: {
+    name: gqlGuild.server.name,
+    region: regionNamesToRegion[gqlGuild.server.region.compactName] || Region.US,
+  },
+  faction: Faction.Alliance,
+});
+
+const getGuild = async (client: GraphQLClient, request: GuildRequest): Promise<Guild> => {
   const { serverName, serverRegion, guildName } = request;
   const serverSlug = serverNameToServerSlug(serverName);
+  const variables: GetGuildQueryVariables = { serverSlug, guildName, serverRegion };
 
-  const client = await createClient();
+  console.log(`EXECUTE "${NAME}" getGuild call:`, variables);
+
   const sdk = getSdk(client);
+  const data = await sdk.getGuild(variables);
 
+  if (!data || !data.guildData || !data.guildData.guild) {
+    throw new Error(`No guild found matching the specified criteria: ${JSON.stringify(variables)}`);
+  }
+
+  return gqlGuildToGuild(data.guildData.guild as GQLGuild);
+};
+
+const getAttendancePage = async (
+  client: GraphQLClient,
+  request: GuildRequest,
+  pageNumber: number
+): Promise<GuildAttendancePagination> => {
+  const { serverName, serverRegion, guildName } = request;
+  const serverSlug = serverNameToServerSlug(serverName);
+  const variables: GetAttendanceQueryVariables = {
+    serverSlug,
+    guildName,
+    serverRegion,
+    page: pageNumber,
+    limit: LIMIT,
+  };
+
+  console.log(`EXECUTE "${NAME}" getAttendance call:`, variables);
+
+  const sdk = getSdk(client);
+  const data = await sdk.getAttendance(variables);
+
+  if (!data || !data.guildData || !data.guildData.guild || !data.guildData.guild.attendance) {
+    throw new Error(`No guild attendance found matching the specified criteria: ${JSON.stringify(variables)}`);
+  }
+
+  return data.guildData.guild.attendance as GuildAttendancePagination;
+};
+
+const getAttendance = async (client: GraphQLClient, request: GuildRequest): Promise<CharacterToAttendance> => {
   let numberOfRaids = 0;
   const charactersToAttendanceCount: CharacterToAttendance = {};
 
@@ -49,17 +103,7 @@ const getAttendance = async (request: GuildRequest): Promise<CharacterToAttendan
   let hasMorePages = true;
 
   do {
-    const variables = {
-      serverSlug,
-      guildName,
-      serverRegion,
-      page,
-      limit: LIMIT,
-    };
-    console.log("EXECUTE warcraftlogs getGuildData call:", variables);
-    const data = await sdk.getGuildData(variables);
-
-    const guildAttendance = data.guildData?.guild?.attendance;
+    const guildAttendance = await getAttendancePage(client, request, page);
     const raids = compact(guildAttendance?.data || []);
     const players = flatMap(raids, (raid) => compact(raid.players));
 
@@ -88,13 +132,23 @@ const getAttendance = async (request: GuildRequest): Promise<CharacterToAttendan
   return attendance;
 };
 
+const regionNamesToRegion: Record<string, Region> = {
+  US: Region.US,
+  EU: Region.EU,
+  CN: Region.CN,
+  KR: Region.KR,
+};
+
 const dataSource: DataSource = {
   name: "warcraftlogs",
   execute: async (request, response) => {
-    const attendance = await getAttendance(request);
+    const client = await createClient();
+    const guild = await getGuild(client, request);
+    const attendance = await getAttendance(client, request);
 
     return {
       ...response,
+      guild: response.guild || guild,
       attendance: {
         ...response.attendance,
         ...attendance,

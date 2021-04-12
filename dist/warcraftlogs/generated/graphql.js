@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetGuildData = exports.getSdk = exports.GetGuildDataDocument = exports.ViewType = exports.TableDataType = exports.RoleType = exports.ReportRankingMetricType = exports.RankingTimeframeType = exports.RankingCompareType = exports.KillType = exports.HostilityType = exports.GraphDataType = exports.FightRankingMetricType = exports.EventDataType = exports.CharacterRankingMetricType = void 0;
+exports.GetGuild = exports.GetAttendance = exports.getSdk = exports.GetGuildDocument = exports.GetAttendanceDocument = exports.ViewType = exports.TableDataType = exports.RoleType = exports.ReportRankingMetricType = exports.RankingTimeframeType = exports.RankingCompareType = exports.KillType = exports.HostilityType = exports.GraphDataType = exports.FightRankingMetricType = exports.EventDataType = exports.CharacterRankingMetricType = void 0;
 const graphql_tag_1 = __importDefault(require("graphql-tag"));
 /** All the possible metrics. */
 var CharacterRankingMetricType;
@@ -245,8 +245,8 @@ var ViewType;
     /** View by target. */
     ViewType["Target"] = "Target";
 })(ViewType = exports.ViewType || (exports.ViewType = {}));
-exports.GetGuildDataDocument = graphql_tag_1.default `
-    query getGuildData($guildName: String!, $serverSlug: String!, $serverRegion: String!, $limit: Int!, $page: Int!) {
+exports.GetAttendanceDocument = graphql_tag_1.default `
+    query getAttendance($guildName: String!, $serverSlug: String!, $serverRegion: String!, $limit: Int!, $page: Int!) {
   guildData {
     guild(name: $guildName, serverSlug: $serverSlug, serverRegion: $serverRegion) {
       attendance(limit: $limit, page: $page) {
@@ -269,17 +269,38 @@ exports.GetGuildDataDocument = graphql_tag_1.default `
   }
 }
     `;
+exports.GetGuildDocument = graphql_tag_1.default `
+    query getGuild($guildName: String!, $serverSlug: String!, $serverRegion: String!) {
+  guildData {
+    guild(name: $guildName, serverSlug: $serverSlug, serverRegion: $serverRegion) {
+      name
+      faction {
+        name
+      }
+      server {
+        name
+        region {
+          compactName
+        }
+      }
+    }
+  }
+}
+    `;
 const defaultWrapper = sdkFunction => sdkFunction();
 function getSdk(client, withWrapper = defaultWrapper) {
     return {
-        getGuildData(variables, requestHeaders) {
-            return withWrapper(() => client.request(exports.GetGuildDataDocument, variables, requestHeaders));
+        getAttendance(variables, requestHeaders) {
+            return withWrapper(() => client.request(exports.GetAttendanceDocument, variables, requestHeaders));
+        },
+        getGuild(variables, requestHeaders) {
+            return withWrapper(() => client.request(exports.GetGuildDocument, variables, requestHeaders));
         }
     };
 }
 exports.getSdk = getSdk;
-exports.GetGuildData = graphql_tag_1.default `
-    query getGuildData($guildName: String!, $serverSlug: String!, $serverRegion: String!, $limit: Int!, $page: Int!) {
+exports.GetAttendance = graphql_tag_1.default `
+    query getAttendance($guildName: String!, $serverSlug: String!, $serverRegion: String!, $limit: Int!, $page: Int!) {
   guildData {
     guild(name: $guildName, serverSlug: $serverSlug, serverRegion: $serverRegion) {
       attendance(limit: $limit, page: $page) {
@@ -297,6 +318,24 @@ exports.GetGuildData = graphql_tag_1.default `
           }
         }
         has_more_pages
+      }
+    }
+  }
+}
+    `;
+exports.GetGuild = graphql_tag_1.default `
+    query getGuild($guildName: String!, $serverSlug: String!, $serverRegion: String!) {
+  guildData {
+    guild(name: $guildName, serverSlug: $serverSlug, serverRegion: $serverRegion) {
+      name
+      faction {
+        name
+      }
+      server {
+        name
+        region {
+          compactName
+        }
       }
     }
   }

@@ -1545,7 +1545,7 @@ export type Zone = {
   partitions?: Maybe<Array<Maybe<Partition>>>;
 };
 
-export type GetGuildDataQueryVariables = Exact<{
+export type GetAttendanceQueryVariables = Exact<{
   guildName: Scalars['String'];
   serverSlug: Scalars['String'];
   serverRegion: Scalars['String'];
@@ -1554,7 +1554,7 @@ export type GetGuildDataQueryVariables = Exact<{
 }>;
 
 
-export type GetGuildDataQuery = (
+export type GetAttendanceQuery = (
   { __typename?: 'Query' }
   & { guildData?: Maybe<(
     { __typename?: 'GuildData' }
@@ -1579,9 +1579,38 @@ export type GetGuildDataQuery = (
   )> }
 );
 
+export type GetGuildQueryVariables = Exact<{
+  guildName: Scalars['String'];
+  serverSlug: Scalars['String'];
+  serverRegion: Scalars['String'];
+}>;
 
-export const GetGuildDataDocument = gql`
-    query getGuildData($guildName: String!, $serverSlug: String!, $serverRegion: String!, $limit: Int!, $page: Int!) {
+
+export type GetGuildQuery = (
+  { __typename?: 'Query' }
+  & { guildData?: Maybe<(
+    { __typename?: 'GuildData' }
+    & { guild?: Maybe<(
+      { __typename?: 'Guild' }
+      & Pick<Guild, 'name'>
+      & { faction: (
+        { __typename?: 'GameFaction' }
+        & Pick<GameFaction, 'name'>
+      ), server: (
+        { __typename?: 'Server' }
+        & Pick<Server, 'name'>
+        & { region: (
+          { __typename?: 'Region' }
+          & Pick<Region, 'compactName'>
+        ) }
+      ) }
+    )> }
+  )> }
+);
+
+
+export const GetAttendanceDocument = gql`
+    query getAttendance($guildName: String!, $serverSlug: String!, $serverRegion: String!, $limit: Int!, $page: Int!) {
   guildData {
     guild(name: $guildName, serverSlug: $serverSlug, serverRegion: $serverRegion) {
       attendance(limit: $limit, page: $page) {
@@ -1604,6 +1633,24 @@ export const GetGuildDataDocument = gql`
   }
 }
     `;
+export const GetGuildDocument = gql`
+    query getGuild($guildName: String!, $serverSlug: String!, $serverRegion: String!) {
+  guildData {
+    guild(name: $guildName, serverSlug: $serverSlug, serverRegion: $serverRegion) {
+      name
+      faction {
+        name
+      }
+      server {
+        name
+        region {
+          compactName
+        }
+      }
+    }
+  }
+}
+    `;
 
 export type SdkFunctionWrapper = <T>(action: () => Promise<T>) => Promise<T>;
 
@@ -1611,15 +1658,18 @@ export type SdkFunctionWrapper = <T>(action: () => Promise<T>) => Promise<T>;
 const defaultWrapper: SdkFunctionWrapper = sdkFunction => sdkFunction();
 export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
   return {
-    getGuildData(variables: GetGuildDataQueryVariables, requestHeaders?: Dom.RequestInit["headers"]): Promise<GetGuildDataQuery> {
-      return withWrapper(() => client.request<GetGuildDataQuery>(GetGuildDataDocument, variables, requestHeaders));
+    getAttendance(variables: GetAttendanceQueryVariables, requestHeaders?: Dom.RequestInit["headers"]): Promise<GetAttendanceQuery> {
+      return withWrapper(() => client.request<GetAttendanceQuery>(GetAttendanceDocument, variables, requestHeaders));
+    },
+    getGuild(variables: GetGuildQueryVariables, requestHeaders?: Dom.RequestInit["headers"]): Promise<GetGuildQuery> {
+      return withWrapper(() => client.request<GetGuildQuery>(GetGuildDocument, variables, requestHeaders));
     }
   };
 }
 export type Sdk = ReturnType<typeof getSdk>;
 
-export const GetGuildData = gql`
-    query getGuildData($guildName: String!, $serverSlug: String!, $serverRegion: String!, $limit: Int!, $page: Int!) {
+export const GetAttendance = gql`
+    query getAttendance($guildName: String!, $serverSlug: String!, $serverRegion: String!, $limit: Int!, $page: Int!) {
   guildData {
     guild(name: $guildName, serverSlug: $serverSlug, serverRegion: $serverRegion) {
       attendance(limit: $limit, page: $page) {
@@ -1637,6 +1687,24 @@ export const GetGuildData = gql`
           }
         }
         has_more_pages
+      }
+    }
+  }
+}
+    `;
+export const GetGuild = gql`
+    query getGuild($guildName: String!, $serverSlug: String!, $serverRegion: String!) {
+  guildData {
+    guild(name: $guildName, serverSlug: $serverSlug, serverRegion: $serverRegion) {
+      name
+      faction {
+        name
+      }
+      server {
+        name
+        region {
+          compactName
+        }
       }
     }
   }

@@ -121,7 +121,8 @@ export type GuildRequest = {
 };
 
 export type GuildResponse = {
-  guild: Guild;
+  request: GuildRequest;
+  guild?: Guild;
   characters: Character[];
   attunements: CharacterToAttunements;
   attendance: CharacterToAttendance;

@@ -1,21 +1,15 @@
-query getGuildData($guildName: String!, $serverSlug: String!, $serverRegion: String!, $limit: Int!, $page: Int!) {
+query getGuild($guildName: String!, $serverSlug: String!, $serverRegion: String!) {
   guildData {
     guild(name: $guildName, serverSlug: $serverSlug, serverRegion: $serverRegion) {
-      attendance(limit: $limit, page: $page) {
-        current_page
-        data {
-          code
-          players {
-            name
-            presence
-            type
-          }
-          startTime
-          zone {
-            name
-          }
+      name
+      faction {
+        name
+      }
+      server {
+        name
+        region {
+          compactName
         }
-        has_more_pages
       }
     }
   }

@@ -28,7 +28,7 @@ const getGuildId = (request) => __awaiter(void 0, void 0, void 0, function* () {
         .get(GUILDS_URL, { searchParams })
         .json();
     if (isError(response)) {
-        throw new Error(`response.message: ${JSON.stringify(searchParams)}`);
+        throw new Error(JSON.stringify({ searchParams, message: response.message }));
     }
     const firstResponse = response[0];
     return firstResponse.guildId;

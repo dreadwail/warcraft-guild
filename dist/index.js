@@ -31,14 +31,8 @@ app.get("/guild/:serverRegion(US|EU|CN|KR)/:serverName/:faction(alliance|horde)/
     };
     const dataSources = [warcraftlogs_1.default, attune_1.default];
     const initialResponse = {
-        guild: {
-            name: guildName,
-            server: {
-                name: serverName,
-                region: serverRegion,
-            },
-            faction,
-        },
+        request,
+        guild: undefined,
         characters: [],
         attunements: {},
         attendance: {},
@@ -46,13 +40,13 @@ app.get("/guild/:serverRegion(US|EU|CN|KR)/:serverName/:faction(alliance|horde)/
     const guildResponse = yield dataSources.reduce((previousPromise, dataSource) => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield previousPromise;
         try {
-            console.log(`BEGIN collection from data source: ${dataSource.name}`);
+            console.log(`BEGIN collection from data source "${dataSource.name}"`);
             const newResponse = yield dataSource.execute(request, response);
-            console.log(`END collection from data source: ${dataSource.name}`);
+            console.log(`END collection from data source "${dataSource.name}"`);
             return newResponse;
         }
-        catch (_a) {
-            console.log(`FAILED collection from data source: ${dataSource.name}`);
+        catch (err) {
+            console.error(`FAILED collection from data source "${dataSource.name}":`, err);
             return response;
         }
     }), Promise.resolve(initialResponse));

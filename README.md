@@ -1,6 +1,6 @@
 # Warcraft Guild
 
-Gather guild member data from a variety of sources and expose the data in a public URL that can be consumed.
+Gather a Classic WoW guild's data from a variety of sources and expose the data in a public URL that can be consumed.
 
 _WARNING: This app has no tests and was written haphazardly for fun. Use at your own risk._
 
